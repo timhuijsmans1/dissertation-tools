@@ -102,23 +102,25 @@ class duplicatePreProcessor:
             if not re.search(pattern_pos, token):
                 non_numerical_tokens.append(token)            
 
-        return non_numerical_tokens
+        return tweet_tokens, non_numerical_tokens
 
-    def tweet_pre_processing(self, tweet_text):
-
-        tweet_text = self.string_processing(tweet_text)
+    def tweet_pre_processing(self, tweet_data):
+        original_text = tweet_data['text']
+        processed_text = self.string_processing(original_text)
 
         # extract and remove emojis and cashtags from the tweet text
-        tweet_text, emoticon_list = self.emoji_extractor(tweet_text)
-        tweet_text, cashtag_list = self.cashtag_extractor(tweet_text)
+        processed_text, emoticon_list = self.emoji_extractor(processed_text)
+        processed_text, cashtag_list = self.cashtag_extractor(processed_text)
 
-        tweet_tokens = self.tokenisation(tweet_text)
+        tweet_tokens, non_numerical_tokens = self.tokenisation(processed_text)
         tweet_data = {
-                'tweet_tokens': tweet_tokens, 
+                'original_text': original_text,
+                'created_at': tweet_data['created_at'],
+                'processed_tokens': tweet_tokens,
+                'non_numerical_tokens': non_numerical_tokens,
                 'emoticon_list': emoticon_list,
                 'cashtag_list': cashtag_list
         }
-
         return tweet_data
 
     def pre_processing(self):
@@ -131,21 +133,25 @@ class duplicatePreProcessor:
                     break
                 else:
                     tweet_data = json.loads(line)
-                    tweet_text = tweet_data['text']
+                    original_text = tweet_data['text']
+                    
+                    # exclude Tweets with 8+ repeated cashtags
+                    pattern = re.compile(r"\$\w+\s\$\w+\s\$\w+\s\$\w+\s\$\w+\s\$\w+\s\$\w+\s\$\w+\s\$\w+")
+                    if pattern.search(original_text): 
+                        continue
 
                     # run pre_processing on individual tweets
-                    pre_processed_tweet = self.tweet_pre_processing(tweet_text)
-                    pre_processed_text = pre_processed_tweet['tweet_tokens']
-                    self.vocabulary |= set(pre_processed_text)
+                    tweet_data_to_write = self.tweet_pre_processing(tweet_data)
+                    non_numerical_tokens = tweet_data_to_write['non_numerical_tokens']
+                    self.vocabulary |= set(non_numerical_tokens)
                     
                     # write tweet data to the pre_processed_data file
-                    tweet_data['pre_processed_text'] = pre_processed_tweet
-                    f_out.write(json.dumps(tweet_data) + '\n')
+                    f_out.write(json.dumps(tweet_data_to_write) + '\n')
 
                     self.tweet_count += 1
                     
                     # print tweet count every 1000 tweets
-                    if self.tweet_count % 1000 == 0:
+                    if self.tweet_count % 100 == 0:
                         print('Processed {} tweets'.format(self.tweet_count))
 
         # write collection data to disk
@@ -182,7 +188,7 @@ class duplicatePreProcessor:
     def cosine_similarity_check(self, threshold, vector_1, vector_2):
         """
         calculate cosine similarity between vector 1 and 2: return
-        True if higher than threshold and False if lower than threshold
+        True if higher/equal than threshold and False if lower than threshold
         """
         cosine_similarity = np.dot(vector_1, vector_2) \
             / (np.linalg.norm(vector_1) * np.linalg.norm(vector_2))
@@ -190,13 +196,10 @@ class duplicatePreProcessor:
         return cosine_similarity >= threshold
     
     def duplicate_check(self, sparse_vector_list, vector_to_check):
-        # assume that the tweet is no duplicate until tested
+        # assume that the tweet is unique until tested
         new_tweet = True
         for i, vector in enumerate(sparse_vector_list):
-            
-            # break the loop if the tweet vector is a duplicate
             dense_existing_vector = vector[0].todense()[0]
-
             if self.cosine_similarity_check(
                         self.cosine_threshold, 
                         dense_existing_vector,
@@ -213,16 +216,10 @@ class duplicatePreProcessor:
                 return True
         return False
                             
-    def duplicate_filter(self, start_point, end_point):
+    def duplicate_filter(self):
         sparse_vectors = []
         high_freq_vectors = []
         with open(self.pre_processed_path, 'r') as f_in:
-            # skip to the start point before processing
-            for _ in range(0, start_point):
-                f_in.readline()
-
-            # print start byte for extra check
-            print(f_in.tell())
 
             with open(self.output_path, 'w') as f_out:
                 count = 0
@@ -237,7 +234,7 @@ class duplicatePreProcessor:
                     else:
                         tweet_data = json.loads(line)
                         pre_processed_text = (
-                            tweet_data['pre_processed_text']['tweet_tokens']
+                            tweet_data['non_numerical_tokens']
                         )
                         dense_new_vector = self.dense_vector_from_tokens(
                                                             pre_processed_text
@@ -267,9 +264,7 @@ class duplicatePreProcessor:
                             f_out.write(line)
                     
                         count += 1
-                        # break out the loop as soon as end point is reached
-                        if count == end_point:
-                            break
+
                         if count % 1000 == 0:
                             # this stores the history of high freq tweets in the 
                             # sparse vector list to use in the next 1000 duplicate 
@@ -281,21 +276,17 @@ class duplicatePreProcessor:
                             print("tweets processed: ", count)
                             print("tweets in high freq tweets: ", len(high_freq_vectors))
                             print("tweets in most recent tweets : ", len(sparse_vectors))
-         
+        os.remove(self.pre_processed_path) 
         return                        
 
                         
 if __name__ == "__main__":
-    NOW = datetime.datetime.now().strftime("%m-%d-%Y_%H;%M;%S")
-    TEST_DATA_PATH = "../data/collected_data/test_raw.txt"
-    FULL_DATA_PATH = "../data/preprocessed_data/with_numerical_tokens/final_data_06-26-2022_15;11;01.txt"
+    FULL_DATA_PATH = "../../collector_data/search_results.txt"
     PREPROCESSED_PATH = "../data/preprocessed_data/preprocessed.txt"
     COLLECTION_DATA_PATH = "../data/preprocessed_data/collection_data.txt"
-    OUTPUT_PATH = f"../data/preprocessed_data/final_data_{NOW}.txt"
+    OUTPUT_PATH = "../data/preprocessed_data/final_data.txt"
     COSINE_SIM_THRESHOLD = 0.6
     HIGH_FREQ_THRESHOLD = 10
-    START_LINE = int(input("Enter start line: "))
-    END_LINE = int(input("Enter end line: "))
     
     pre_processor = duplicatePreProcessor(
                         FULL_DATA_PATH, 
@@ -305,15 +296,6 @@ if __name__ == "__main__":
                         COSINE_SIM_THRESHOLD,
                         HIGH_FREQ_THRESHOLD
     )
-    # make sure to clear the final data file before running
-    if os.path.exists(OUTPUT_PATH):
-        os.remove(OUTPUT_PATH)
-    # if the path does not exist, we need to pre-process all tweets and 
-    # generate the pre-processed vocabulary first.
-    if not os.path.exists(PREPROCESSED_PATH):  
-        pre_processor.pre_processing()
-    # the collection data consists of the number of tweets and the vocabulary
-    else:
-        pre_processor.load_collection_data()
+    pre_processor.pre_processing()
     pre_processor.get_word2index()
-    pre_processor.duplicate_filter(START_LINE, END_LINE)
+    pre_processor.duplicate_filter()

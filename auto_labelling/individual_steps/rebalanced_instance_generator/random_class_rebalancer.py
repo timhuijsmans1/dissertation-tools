@@ -1,21 +1,6 @@
 import json
 import random
 
-def class_rebalancer(lowest_count, input_path, output_path):
-    neg_count = 0
-    pos_count = 0
-    with open(input_path, 'r') as f_in, open(output_path, 'w') as f_out:
-        for line in f_in:
-            label = int(line.split(" ")[0])
-            if label == 1:
-                if pos_count < lowest_count:
-                    f_out.write(line)
-                    pos_count += 1
-            if label == -1:
-                if neg_count < lowest_count:
-                    f_out.write(line)
-                    neg_count += 1
-
 def random_rebalancer(input_path, output_path, amount_to_write):
     neg_tweets = []
     pos_tweets = []

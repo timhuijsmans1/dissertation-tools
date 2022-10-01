@@ -76,7 +76,7 @@ class TweetCollector():
         
         return iter(lambda: tuple(islice(iterator, 75)), ())
     
-    def emoticon_query_compiler(self, ticker_list_subset):
+    def combined_query_compiler(self, ticker_list_subset):
         # compile lists of tickers and emoticons with OR bool
         ticker_query = "(" + " OR ".join(ticker_list_subset) + ")"
         emoticon_query = "(" + " OR ".join(self.emoticon_list) + ")"
@@ -149,11 +149,15 @@ class TweetCollector():
 
         return
 
-    def execute_emoticon_search(self):
-        query_list = [self.emoticon_query_compiler(tickers) for tickers in self.ticker_subsets]
+    def execute_combined_search(self):
+        "executes the search for both companies and emoticons combined"
+
+        query_list = [self.combined_query_compiler(tickers) for tickers in self.ticker_subsets]
         self.result_writer(query_list)
 
     def execute_company_search(self, ticker_list):
+        "executes the search for companies only, omitting the emoticon filter"
+
         query_list = [self.ticker_query_compiler(ticker_list)]
         self.result_writer(query_list)
 
@@ -171,7 +175,7 @@ if __name__ == "__main__":
     START_TIME = datetime.datetime(2022, 7, 17, 0, 0, 0, 0, datetime.timezone.utc)
     END_TIME = datetime.datetime(2022, 7, 18, 0, 0, 0, 0, datetime.timezone.utc)
     POS_EMOTICON_LIST = ["😀", "😃", "😄", "😁", "🙂"]
-    NEG_EMOTICON_LIST = ["😡", "😤", "😟", "😰", "😨", "😖", "😩", "🤬", "😠", "💀", "👎", "😱"]
+    NEG_EMOTICON_LIST = ["😡", "😤", "😟", "😰", "😨", "😖", "😩", "🤬", "😠", "💀", "👎", "😱", "📉"]
     EMOTICON_LIST = POS_EMOTICON_LIST + NEG_EMOTICON_LIST
     TICKER_LIST = ['$AAPL']
 
@@ -186,5 +190,5 @@ if __name__ == "__main__":
                         END_TIME,
                         OUTPUT_PATH
     )
-    # tweet_collector.execute()
+    # tweet_collector.execute_combined_search()
     tweet_collector.execute_company_search(TICKER_LIST)
