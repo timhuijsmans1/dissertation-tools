@@ -246,7 +246,6 @@ class dataLabeller:
                 if count % 1000 == 0:
                     print(count)
         print(class_balance_counter)
-        print(self.removed_crypto_tweet)
 
         return
 

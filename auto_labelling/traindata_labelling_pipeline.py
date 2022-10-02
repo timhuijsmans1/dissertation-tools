@@ -53,6 +53,23 @@ def valid_labelling_method(labelling_method):
     else:
         return True
 
+def rebalanced_instance_generator(
+    labelled_data_path, 
+    rebalanced_data_path, 
+    engineered_data_path, 
+    vocabulary_path, 
+    instances_path
+    ):
+    # run rebalancing
+    lowest_count = class_balance_counter(labelled_data_path)
+    random_rebalancer(labelled_data_path, rebalanced_data_path, lowest_count)
+    # run instance generation
+    feature_engineering = featureEngineering(rebalanced_data_path, engineered_data_path)
+    total_vocabulary = feature_engineering.feature_updating()
+    write_vocabulary(vocabulary_path, total_vocabulary)
+    sparse_total_matrix, total_labels = build_sparse_matrix(engineered_data_path, total_vocabulary)
+    write_data_set(instances_path, sparse_total_matrix, total_labels)
+
 def main():
     tweet_collector = TweetCollector(
                         NASDAQ_100_PATH,
@@ -79,7 +96,7 @@ def main():
     pre_processor.get_word2index()
     pre_processor.duplicate_filter()
 
-    # label Tweets with all methods
+    # label Tweets with union method
     data_labeller = dataLabeller(
         FINANCIAL_LEXICON_PATH, 
         LABELLED_DATA_PATH, 
@@ -89,15 +106,32 @@ def main():
     )
     data_labeller.file_labeller(NON_DUPLICATE_PATH, method='union')
 
-    # run rebalancing
-    lowest_count = class_balance_counter(LABELLED_DATA_PATH)
-    random_rebalancer(LABELLED_DATA_PATH, REBALANCED_DATA_PATH, lowest_count)
-    # run instance generation
-    feature_engineering = featureEngineering(REBALANCED_DATA_PATH, ENGINEERED_DATA_PATH)
-    total_vocabulary = feature_engineering.feature_updating()
-    write_vocabulary(VOCABULARY_PATH, total_vocabulary)
-    sparse_total_matrix, total_labels = build_sparse_matrix(ENGINEERED_DATA_PATH, total_vocabulary)
-    write_data_set(INSTANCES_PATH, sparse_total_matrix, total_labels)
+    # label Tweets with emoticon method
+    data_labeller = dataLabeller(
+        FINANCIAL_LEXICON_PATH, 
+        LABELLED_EMO_DATA_PATH, 
+        NEG_INDICATOR_PATH,
+        POS_EMOTICON_LIST, 
+        NEG_EMOTICON_LIST
+    )
+    data_labeller.file_labeller(NON_DUPLICATE_PATH, method='emoticon')
+
+    # run union instance generation
+    rebalanced_instance_generator(
+        LABELLED_DATA_PATH,
+        REBALANCED_DATA_PATH,
+        ENGINEERED_DATA_PATH,
+        VOCABULARY_PATH,
+        INSTANCES_PATH
+    )
+    # run emoticon instance generation
+    rebalanced_instance_generator(
+        LABELLED_EMO_DATA_PATH,
+        REBALANCED_EMO_DATA_PATH,
+        ENGINEERED_EMO_DATA_PATH,
+        VOCABULARY_EMO_PATH,
+        INSTANCES_EMO_PATH
+    )
 
 if __name__ == "__main__":
     # Tweet collection paths
@@ -124,10 +158,8 @@ if __name__ == "__main__":
     HIGH_FREQ_THRESHOLD = 10
 
     # labelling paths
-    LABELLING_METHOD = input("Select labelling method (union/emoticon/lexicon): ")
-    if not valid_labelling_method(LABELLING_METHOD):
-        raise Exception('labelling method not valid')
-    LABELLED_DATA_PATH = f"collector_data/labelled_data_{LABELLING_METHOD}.txt"
+    LABELLED_DATA_PATH = "collector_data/labelled_data.txt"
+    LABELLED_EMO_DATA_PATH = "collector_data/labelled_emo_data.txt"
     FINANCIAL_LEXICON_PATH = "individual_steps/data/fin_sent_lexicon/lexicons/lexiconWNPMINW.csv"
     NEG_INDICATOR_PATH = "individual_steps/data_labelling/negation_ind.txt"
 
@@ -137,14 +169,17 @@ if __name__ == "__main__":
     VOCABULARY_PATH = "collector_data/prediction_input_files/vocabulary.txt"
     INSTANCES_PATH = "collector_data/prediction_input_files/train_instances.txt"
 
+    REBALANCED_EMO_DATA_PATH = "collector_data/rebalanced_labelled_emo_data.txt"
+    ENGINEERED_EMO_DATA_PATH = "collector_data/rebalanced_engineered_labelled_emo_data.txt"
+    VOCABULARY_EMO_PATH = "collector_data/prediction_input_files/emo_vocabulary.txt"
+    INSTANCES_EMO_PATH = "collector_data/prediction_input_files/emo_train_instances.txt"
+
     main()
 
     # TODO: 
-    # include the emoticon labelling method and the emoticon data in rebalancing
-    # store both vocabularies and instance paths to easily access these in the prediction
-    # pipeline
-
     # improve code readability
 
     # remove redundant files and scripts
+
+    # include all data folders in github repo
 
