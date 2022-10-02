@@ -175,6 +175,3 @@ if __name__ == "__main__":
     INSTANCES_EMO_PATH = "collector_data/prediction_input_files/emo_train_instances.txt"
 
     main()
-
-    # TODO: 
-    # improve code readability
