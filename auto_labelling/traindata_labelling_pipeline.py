@@ -178,8 +178,3 @@ if __name__ == "__main__":
 
     # TODO: 
     # improve code readability
-
-    # remove redundant files and scripts
-
-    # include all data folders in github repo
-
