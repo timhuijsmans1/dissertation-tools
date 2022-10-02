@@ -10,3 +10,7 @@ __pycache__
 *.png
 *.zip
 !lexicon*.csv
+!negation_ind.txt
+!nasdaq_100_listings.csv
+!nasdaq-listed-symbols.json
+!nyse-listed.json
