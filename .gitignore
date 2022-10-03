@@ -14,3 +14,4 @@ __pycache__
 !nasdaq_100_listings.csv
 !nasdaq-listed-symbols.json
 !nyse-listed.json
+!requirements.txt
