@@ -175,7 +175,7 @@ if __name__ == "__main__":
     START_TIME = datetime.datetime(2022, 7, 17, 0, 0, 0, 0, datetime.timezone.utc)
     END_TIME = datetime.datetime(2022, 7, 18, 0, 0, 0, 0, datetime.timezone.utc)
     POS_EMOTICON_LIST = ["😀", "😃", "😄", "😁", "🙂"]
-    NEG_EMOTICON_LIST = ["😡", "😤", "😟", "😰", "😨", "😖", "😩", "🤬", "😠", "💀", "👎", "😱", "📉"]
+    NEG_EMOTICON_LIST = ["😡", "😤", "😟", "😰", "😨", "😖", "😩", "🤬", "😠", "💀", "👎", "📉"]
     EMOTICON_LIST = POS_EMOTICON_LIST + NEG_EMOTICON_LIST
     TICKER_LIST = ['$AAPL']
 

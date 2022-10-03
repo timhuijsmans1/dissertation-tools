@@ -145,7 +145,7 @@ if __name__ == "__main__":
     POS_EMOTICON_LIST = ["😀", "😃", "😄", "😁", "🙂"]
     NEG_EMOTICON_LIST = [
         "😡", "😤", "😟", "😰", "😨", "😖",
-        "😩", "🤬", "😠", "💀", "👎", "😱", "📉"
+        "😩", "🤬", "😠", "💀", "👎", "📉"
     ]
     EMOTICON_LIST = POS_EMOTICON_LIST + NEG_EMOTICON_LIST
     START_TIME, END_TIME = prompt_utc_time()
