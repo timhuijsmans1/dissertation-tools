@@ -6,5 +6,5 @@ This folder contains all the scripts and the main file running the individual sc
 ### IMPORTANT: In order to run the scripts, a Twitter v2 academic access bearer token is required.
 To execute the collection pipeline, first place the bearer token in traindata_labelling_pipeline.py. Then, run the script as python traindata_labelling_pipeline.py and provide the date range in the command line prompt. The script executes if there is a stable internet connection, and the internet connection is required throughout the collection step (shown in command line output).
 
-The outputs produced are the collected, processed and labelled data files, as well as the input that is required for the ML prediction process in the labelled_data2predictions folder.
+The outputs produced are the collected, processed and labelled data files, as well as the input that is required for the ML prediction process in the labelled_data2predictions tool. These input files are stored in ./collector_data/prediction_input_files.
 
